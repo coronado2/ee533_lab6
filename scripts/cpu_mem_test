@@ -1,0 +1,115 @@
+#!/usr/bin/perl
+use strict;
+use warnings;
+
+# ==============================
+# Register Addresses
+# ==============================
+
+my $CPU_CMD   = 0x02000100;
+my $CPU_ADDR  = 0x02000104;
+my $CPU_WDATA = 0x02000108;
+my $CPU_RDATA = 0x0200010C;
+
+# ==============================
+# Helpers
+# ==============================
+
+sub regwrite {
+    my ($addr, $data) = @_;
+    system(sprintf("nf2_regwrite 0x%08X 0x%08X", $addr, $data));
+}
+
+sub regread {
+    my ($addr) = @_;
+    my $out = `nf2_regread 0x@{[sprintf("%08X",$addr)]}`;
+    if ($out =~ /0x([0-9A-Fa-f]+)/) {
+        return hex($1);
+    }
+    return 0;
+}
+
+sub write_mem {
+    my ($addr, $data) = @_;
+    regwrite($CPU_ADDR,  $addr);
+    regwrite($CPU_WDATA, $data);
+    regwrite($CPU_CMD,   0x1);   # write
+}
+
+sub read_mem {
+    my ($addr) = @_;
+    regwrite($CPU_ADDR, $addr);
+    regwrite($CPU_CMD,  0x2);    # read
+    return regread($CPU_RDATA);
+}
+
+# ==============================
+# Begin Test
+# ==============================
+
+print "\n===== CPU MEMORY INTERFACE VERIFICATION =====\n";
+
+# Disable CPU
+regwrite($CPU_CMD, 0x0);
+
+# ----------------------------
+# Test Instruction Memory
+# ----------------------------
+
+print "\nTesting Instruction Memory (0-511)...\n";
+
+my $i_addr = 10;
+my $i_val  = 0x12345678;
+
+write_mem($i_addr, $i_val);
+my $read_i = read_mem($i_addr);
+
+if ($read_i == $i_val) {
+    print "PASS: I-memory write/read correct\n";
+} else {
+    print "FAIL: I-memory mismatch\n";
+}
+
+# ----------------------------
+# Test Data Memory
+# ----------------------------
+
+print "\nTesting Data Memory (512-768)...\n";
+
+my $d_addr = 512 + 5;
+my $d_val  = 0xAABBCCDD;
+
+write_mem($d_addr, $d_val);
+my $read_d = read_mem($d_addr);
+
+if ($read_d == $d_val) {
+    print "PASS: D-memory write/read correct\n";
+} else {
+    print "FAIL: D-memory mismatch\n";
+}
+
+# ----------------------------
+# Cross-Region Isolation Test
+# ----------------------------
+
+print "\nTesting Memory Isolation...\n";
+
+# Ensure I-memory unchanged
+my $check_i = read_mem($i_addr);
+
+if ($check_i == $i_val) {
+    print "PASS: I-memory not corrupted by D-memory write\n";
+} else {
+    print "FAIL: I-memory corrupted\n";
+}
+
+# Ensure D-memory unchanged
+my $check_d = read_mem($d_addr);
+
+if ($check_d == $d_val) {
+    print "PASS: D-memory not corrupted by I-memory write\n";
+} else {
+    print "FAIL: D-memory corrupted\n";
+}
+
+print "\n===== TEST COMPLETE =====\n";
