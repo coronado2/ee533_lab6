@@ -26,14 +26,17 @@ module datapath (
 	 wire [`PC_WIDTH-1:0] pc_if;
 	 wire [`INSTR_WIDTH-1:0] instr_if;
 	 wire pc_en;
+	 wire [`PC_WIDTH-1:0] br_target;
 	 assign pc_en = 1'b1; // update pc every clock
 
     // ID (Decode)
+	 wire [`PC_WIDTH-1:0] pc_id;
 	 wire [`INSTR_WIDTH-1:0] instr_id;
 	 wire [1:0] major_op;
 	 reg wregen_id;
 	 reg wmemen_id;
 	 reg mem_to_reg_id;
+	 reg br_en_id;
 	 reg [1:0] cond_id;
 	 reg [3:0] alu_op_id;
 	 reg alu_src_id;
@@ -45,9 +48,12 @@ module datapath (
 	 wire [`DATA_WIDTH-1:0] r2out_id;
 
     // EX (Execute)
+	 wire [`PC_WIDTH-1:0] pc_ex;
+	 wire pc_mux_sel_ex;
 	 wire wregen_ex;
 	 wire wmemen_ex;
 	 wire mem_to_reg_ex;
+	 wire br_en_ex;
 	 wire [1:0] cond_ex;
 	 wire [3:0] alu_op_ex;
 	 wire alu_src_ex;
@@ -59,9 +65,12 @@ module datapath (
 	 wire [`DATA_WIDTH-1:0] alu_result_ex;
 
     // MEM (Memory)
+	 wire [`PC_WIDTH-1:0] pc_mem;
+	 wire pc_mux_sel_mem;
 	 wire wregen_mem;
 	 wire wmemen_mem;
 	 wire mem_to_reg_mem;
+	 wire [`DATA_WIDTH-1:0] imm_mem;
 	 wire [`REG_ADDR_WIDTH-1:0] wreg1_mem;
 	 wire [`DATA_WIDTH-1:0] r1out_mem;
 	 wire [`DATA_WIDTH-1:0] r2out_mem;
@@ -70,8 +79,11 @@ module datapath (
 
 
     // WB (Write Back)
+	 wire [`PC_WIDTH-1:0] pc_wb;
+	 wire pc_mux_sel_wb;
 	 wire wregen_wb;
 	 wire mem_to_reg_wb;
+	 wire [`DATA_WIDTH-1:0] imm_wb;
 	 wire [`REG_ADDR_WIDTH-1:0] wreg1_wb;
 	 wire [`DATA_WIDTH-1:0] d_mem_data_wb;
 	 wire [`DATA_WIDTH-1:0] alu_result_wb;
@@ -82,22 +94,25 @@ module datapath (
     // ============================================================
 
     // IF (Instruction Fetch)
+	 assign br_target = pc_wb + imm_wb[`PC_WIDTH:0];
 	 prog_counter u_prog_counter(
 		.clk(clk),
 		.rst_n(rst_n),
 		.en(pc_en),
+		.br(pc_mux_sel_wb),	//need to update to pc_mux_sel_wb to align with thread
+		.br_target(br_target),
 		.pc_out(pc_if)
 	 );
 	 
 	 assign i_mem_addr_out = pc_if;
 	 assign instr_if = i_mem_data_in;
 	 
-	 pipeline_reg #(.REGS(`INSTR_WIDTH)) if_id_stage (
+	 pipeline_reg #(.REGS(`PC_WIDTH+`INSTR_WIDTH)) if_id_stage (
 		.clk(clk),
 		.rst_n(rst_n),
 		.en(1'b1),
-		.D(instr_if),
-		.Q(instr_id)
+		.D({pc_if, instr_if}),
+		.Q({pc_id, instr_id})
 	 );
 
     // ID (Decode)
@@ -105,7 +120,8 @@ module datapath (
 	 always @(*) begin
 		wmemen_id = 1'b0;
 		wregen_id = 1'b0;
-		mem_to_reg_id = 1'b0;	 
+		mem_to_reg_id = 1'b0;
+		br_en_id = 1'b0;	 
 		reg1_id = 4'b0;
 		reg2_id = 4'b0;
 		wreg1_id = 4'b0;
@@ -142,8 +158,12 @@ module datapath (
 				imm_id = {{(64-21){instr_id[20]}}, instr_id[20:0]};
 			end
 			2'b11: begin	//Branch
-				cond_id = instr_id[29:28];
-				imm_id = {{(64-28){instr_id[27]}}, instr_id[27:0]};
+				br_en_id = 1'b1;
+				reg1_id = instr_id[28:25];
+				reg2_id = instr_id[24:21];
+				cond_id = instr_id[20:19];
+				alu_op_id = 4'b1001;	// eq opcode
+				imm_id = {{(64-9){instr_id[8]}}, instr_id[8:0]};	//PC Width
 			end
 		endcase
 	 end
@@ -159,32 +179,33 @@ module datapath (
       .r1data(r2out_id)
     );
 	 
-	 pipeline_reg #(.REGS(1+1+1+`DATA_WIDTH+`DATA_WIDTH+`REG_ADDR_WIDTH+2+4+1+`DATA_WIDTH)) id_ex_stage(
+	 pipeline_reg #(.REGS(`PC_WIDTH+1+1+1+1+`DATA_WIDTH+`DATA_WIDTH+`REG_ADDR_WIDTH+2+4+1+`DATA_WIDTH)) id_ex_stage(
 		.clk(clk),
 		.rst_n(rst_n),
 		.en(1'b1),
-		.D({wregen_id, wmemen_id, mem_to_reg_id, r1out_id, r2out_id, wreg1_id, cond_id, alu_op_id, alu_src_id, imm_id}),
-		.Q({wregen_ex, wmemen_ex, mem_to_reg_ex, r1out_ex, r2out_ex, wreg1_ex, cond_ex, alu_op_ex, alu_src_ex, imm_ex})
+		.D({pc_id, wregen_id, wmemen_id, mem_to_reg_id, br_en_id, r1out_id, r2out_id, wreg1_id, cond_id, alu_op_id, alu_src_id, imm_id}),
+		.Q({pc_ex, wregen_ex, wmemen_ex, mem_to_reg_ex, br_en_ex, r1out_ex, r2out_ex, wreg1_ex, cond_ex, alu_op_ex, alu_src_ex, imm_ex})
 	 );
 
     // EX (Execute)
 	assign alu_operand_b = (!alu_src_ex) ? r2out_ex : imm_ex;
 
 	alu u_alu (
-		.clk(clk),
-		.reset(~rst_n),
 		.A(r1out_ex),
 		.B(alu_operand_b), 
 		.op(alu_op_ex),
 		.ALU_out(alu_result_ex)
 	);
 
-	 pipeline_reg #(.REGS(1+1+1+`DATA_WIDTH+`DATA_WIDTH+`REG_ADDR_WIDTH+`DATA_WIDTH)) ex_mem_stage(
+	assign pc_mux_sel_ex = (br_en_ex) && (((cond_ex == 2'b00) && alu_result_ex[0]) || 
+						((cond_ex == 2'b01) && (!alu_result_ex[0])) || (cond_ex == 2'b10));
+
+	 pipeline_reg #(.REGS(`PC_WIDTH+1+1+1+1+`DATA_WIDTH+`DATA_WIDTH+`REG_ADDR_WIDTH+`DATA_WIDTH+`DATA_WIDTH)) ex_mem_stage(
 		.clk(clk),
 		.rst_n(rst_n),
 		.en(1'b1),
-		.D({wregen_ex, wmemen_ex, mem_to_reg_ex, r1out_ex, r2out_ex, wreg1_ex, alu_result_ex}),
-		.Q({wregen_mem, wmemen_mem, mem_to_reg_mem, r1out_mem, r2out_mem, wreg1_mem, alu_result_mem})
+		.D({pc_ex, pc_mux_sel_ex, wregen_ex, wmemen_ex, mem_to_reg_ex, r1out_ex, r2out_ex, wreg1_ex, alu_result_ex, imm_ex}),
+		.Q({pc_mem, pc_mux_sel_mem, wregen_mem, wmemen_mem, mem_to_reg_mem, r1out_mem, r2out_mem, wreg1_mem, alu_result_mem, imm_mem})
 	 );
 
     // MEM (Memory)
@@ -193,12 +214,12 @@ module datapath (
 	 assign d_mem_wen_out = wmemen_mem;
 	 assign d_mem_data_mem = d_mem_data_in;
 	 
-	 pipeline_reg #(.REGS(1+1+`DATA_WIDTH+`REG_ADDR_WIDTH+`DATA_WIDTH)) mem_wb_stage(
+	 pipeline_reg #(.REGS(`PC_WIDTH+1+1+1+`DATA_WIDTH+`REG_ADDR_WIDTH+`DATA_WIDTH+`DATA_WIDTH)) mem_wb_stage(
 		.clk(clk),
 		.rst_n(rst_n),
 		.en(1'b1),
-		.D({wregen_mem, mem_to_reg_mem, d_mem_data_mem, wreg1_mem, alu_result_mem}),
-		.Q({wregen_wb, mem_to_reg_wb, d_mem_data_wb, wreg1_wb, alu_result_wb})
+		.D({pc_mem, pc_mux_sel_mem, wregen_mem, mem_to_reg_mem, d_mem_data_mem, wreg1_mem, alu_result_mem, imm_mem}),
+		.Q({pc_wb, pc_mux_sel_wb, wregen_wb, mem_to_reg_wb, d_mem_data_wb, wreg1_wb, alu_result_wb, imm_wb})
 	 );
 
     // WB (Write Back)
