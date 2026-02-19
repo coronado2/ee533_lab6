@@ -3,13 +3,11 @@
 // ADD, SUB, SLT, SLTU, BW_AND, BW_OR, BW_XNOR, SHIFT_L, SHIFT_R, EQ
 `timescale 1ns/1ps
 
-module alu (clk, reset, A, B, op, ALU_out);
-    input clk;
-    input reset;
+module alu (A, B, op, ALU_out);
     input [63:0] A;
     input [63:0] B;
     input [3:0] op;
-    output reg [63:0] ALU_out;
+    output [63:0] ALU_out;
 
     reg [63:0] ALU_next;
     reg [63:0] sub;
@@ -51,10 +49,7 @@ module alu (clk, reset, A, B, op, ALU_out);
         endcase            
     end
 
-    always @(posedge clk) begin
-        if (reset) ALU_out <= 64'b0;
-        else 
-            ALU_out <= ALU_next;    // synchronous output
-    end
+    assign ALU_out = ALU_next;
+    
 endmodule
 
