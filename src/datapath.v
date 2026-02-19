@@ -30,6 +30,12 @@ module datapath (
 
     // ID (Decode)
 	 wire [`INSTR_WIDTH-1:0] instr_id;
+	 wire [1:0] major_op;
+	 reg [3:0] alu_op;
+	 reg [1:0] cond;
+	 reg [12:0] imm13;
+	 reg [20:0] offset;
+	 reg [27:0] pc_offset;
 	 wire wregen_id;
 	 wire wmemen_id;
 	 wire [`REG_ADDR_WIDTH-1:0] wreg1_id;
@@ -82,11 +88,54 @@ module datapath (
 	 );
 
     // ID (Decode)
+	 assign major_op = instr_id[31:30];	// ALU: 00, LW: 01, SW: 10, 11 Branch
+	 always @(*) begin
+	 	case(major_op)
+			2'b00:	begin	//R-type and I-type
+				reg1_id = instr_id[28:25];
+				reg2_id = instr_id[24:21];
+				cond = 2'b0;
+				wreg1_id = instr_id[20:17];
+				alu_op = instr_id[16:13];
+				imm13 = instr_id[12:0];
+				offset = 21'b0;
+				pc_offset = 28'b0;
+			end
+			2'b01: begin	//LW
+				reg1_id = instr_id[28:25];
+				reg2_id = 4'b0;
+				cond = 2'b0;
+				wreg1_id = instr_id[24:21];
+				alu_op = 4'b0;
+				imm13 = 13'b0;
+				offset = instr_id[20:0];
+				pc_offset = 28'b0;
+			end
+			2'b10: begin	//SW
+				reg1_id = instr_id[28:25];
+				reg2_id = instr_id[24:21];
+				cond = 2'b0;
+				wreg1_id = 4'b0;
+				alu_op = 4'b0;
+				imm13 = 13'b0;
+				offset = 21'b0;
+				pc_offset = 28'b0;
+			end
+			2'b11: begin	//Branch
+				reg1_id = 4'b0;
+				reg2_id = 4'b0;
+				cond = instr_id[29:28];
+				wreg1_id = 4'b0;
+				alu_op = 4'b0;
+				imm13 = 13'b0;
+				offset = 21'b0;
+				pc_offset = instr_id[27:0];
+			end
+		endcase
+	 end
+
 	 assign wmemen_id = instr_id[31];
 	 assign wregen_id = instr_id[30];
-	 assign reg1_id = instr_id[28:27];
-	 assign reg2_id = instr_id[25:24];
-	 assign wreg1_id = instr_id[22:21];
 	 
 	 regfile u_regfile (
 		.clk(clk),

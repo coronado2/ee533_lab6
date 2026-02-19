@@ -1,0 +1,16 @@
+Instructions:
+    ADD
+    SUB
+    ADDi
+    AND
+    OR
+    XNOR
+    SLL
+    SRL
+    SLT
+    SLTU
+    LW
+    SW
+    BEQ
+    BNE
+    J
