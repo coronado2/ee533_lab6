@@ -36,8 +36,8 @@ module datapath (
 	 reg [12:0] imm13;
 	 reg [20:0] offset;
 	 reg [27:0] pc_offset;
-	 wire wregen_id;
-	 wire wmemen_id;
+	 reg wregen_id;
+	 reg wmemen_id;
 	 wire [`REG_ADDR_WIDTH-1:0] wreg1_id;
 	 wire [`REG_ADDR_WIDTH-1:0] reg1_id;
 	 wire [`REG_ADDR_WIDTH-1:0] reg2_id;
@@ -90,53 +90,44 @@ module datapath (
     // ID (Decode)
 	 assign major_op = instr_id[31:30];	// ALU: 00, LW: 01, SW: 10, 11 Branch
 	 always @(*) begin
+		reg1_id = 4'b0;
+		reg2_id = 4'b0;
+		cond = 2'b0;
+		wreg1_id = 4'b0;
+		alu_op = 4'b0;
+		imm13 = 13'b0;
+		offset = 21'b0;
+		pc_offset = 28'b0;
+		wmemen_id = 1'b0;
+		wreg1_id = 1'b0;
+
 	 	case(major_op)
 			2'b00:	begin	//R-type and I-type
 				reg1_id = instr_id[28:25];
 				reg2_id = instr_id[24:21];
-				cond = 2'b0;
 				wreg1_id = instr_id[20:17];
 				alu_op = instr_id[16:13];
 				imm13 = instr_id[12:0];
-				offset = 21'b0;
-				pc_offset = 28'b0;
 			end
 			2'b01: begin	//LW
 				reg1_id = instr_id[28:25];
-				reg2_id = 4'b0;
-				cond = 2'b0;
 				wreg1_id = instr_id[24:21];
-				alu_op = 4'b0;
-				imm13 = 13'b0;
 				offset = instr_id[20:0];
-				pc_offset = 28'b0;
+				wreg1_id = 1'b1;	//regWrite
 			end
 			2'b10: begin	//SW
 				reg1_id = instr_id[28:25];
 				reg2_id = instr_id[24:21];
-				cond = 2'b0;
-				wreg1_id = 4'b0;
-				alu_op = 4'b0;
-				imm13 = 13'b0;
-				offset = 21'b0;
-				pc_offset = 28'b0;
+				offset = instr_id[20:0];
+				wmemen_id = 1'b1;	//memWrite
 			end
 			2'b11: begin	//Branch
-				reg1_id = 4'b0;
-				reg2_id = 4'b0;
 				cond = instr_id[29:28];
-				wreg1_id = 4'b0;
-				alu_op = 4'b0;
-				imm13 = 13'b0;
-				offset = 21'b0;
 				pc_offset = instr_id[27:0];
 			end
 		endcase
 	 end
-
-	 assign wmemen_id = instr_id[31];
-	 assign wregen_id = instr_id[30];
-	 
+	
 	 regfile u_regfile (
 		.clk(clk),
 		.wena(wregen_wb),
@@ -148,7 +139,7 @@ module datapath (
       .r1data(r2out_id)
     );
 	 
-	 pipeline_reg #(.REGS(1+1+`DATA_WIDTH+`DATA_WIDTH+`REG_ADDR_WIDTH)) id_ex_stage(
+	 pipeline_reg #(.REGS(2+4+13+21+28+`DATA_WIDTH+`DATA_WIDTH+`REG_ADDR_WIDTH)) id_ex_stage(
 		.clk(clk),
 		.rst_n(rst_n),
 		.en(1'b1),
@@ -157,6 +148,15 @@ module datapath (
 	 );
 
     // EX (Execute)
+	alu u_alu (
+		.clk(clk),
+		.reset(rst_n),
+		.A(r1out_id),
+		.B(r2out_id), //temp need to mux with imm13 and offsets
+		.op(),	//alu op
+		.ALU_out()
+	)
+
 	 pipeline_reg #(.REGS(1+1+`DATA_WIDTH+`DATA_WIDTH+`REG_ADDR_WIDTH)) ex_mem_stage(
 		.clk(clk),
 		.rst_n(rst_n),
