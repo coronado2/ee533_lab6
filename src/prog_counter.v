@@ -6,8 +6,6 @@ module prog_counter #(
     input  wire                 clk,
     input  wire                 rst_n,   // active-low reset
     input  wire                 en,      // enable
-    input  wire                 br,
-    input  wire [PC_WIDTH-1:0]  br_target,
     output reg  [PC_WIDTH-1:0]  pc_out
 );
 
@@ -16,10 +14,7 @@ always @(posedge clk or negedge rst_n) begin
         pc_out <= {PC_WIDTH{1'b0}};
     end
     else if (en) begin
-        if (!br)
-            pc_out <= br_target;
-        else
-            pc_out <= pc_out + 1;
+        pc_out <= pc_out + 1;
     end
 end
 

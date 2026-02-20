@@ -99,12 +99,10 @@ module datapath (
 		.clk(clk),
 		.rst_n(rst_n),
 		.en(pc_en),
-		.br(pc_mux_sel_wb),	//need to update to pc_mux_sel_wb to align with thread
-		.br_target(br_target),
 		.pc_out(pc_if)
 	 );
 	 
-	 assign i_mem_addr_out = pc_if;
+	 assign i_mem_addr_out = (pc_mux_sel_wb) ? br_target : pc_if;
 	 assign instr_if = i_mem_data_in;
 	 
 	 pipeline_reg #(.REGS(`PC_WIDTH+`INSTR_WIDTH)) if_id_stage (
