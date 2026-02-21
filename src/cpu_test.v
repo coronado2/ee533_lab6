@@ -18,7 +18,7 @@ module cpu_test(
 	 wire cpu_done;
 	 
 	 i_mem u_i_mem(
-		.addr(i_mem_addr_out[8:0]),
+		.addr(i_mem_addr_out[10:0]),
 		.clk(clk),
 		.dout(i_mem_data_in)
 	 );
@@ -43,7 +43,7 @@ module cpu_test(
 		.wea(d_mem_wren),
 		// Port B (Unused)
 		.addrb(10'b0),
-		.clkb(clk),
+		.clkb(1'b0),
 		.dinb(64'b0),
 		.doutb(),
 		.web(1'b0)

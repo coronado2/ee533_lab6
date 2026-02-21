@@ -25,6 +25,7 @@ module datapath (
 
     // IF (Instruction Fetch)
 	 wire [`PC_WIDTH-1:0] pc_if;
+	 wire [`PC_WIDTH-1:0] pc_fetch;
 	 assign cpu_done = (pc_if == {`PC_WIDTH{1'b1}});
 	 wire [`INSTR_WIDTH-1:0] instr_if;
 	 wire pc_en;
@@ -96,7 +97,7 @@ module datapath (
     // ============================================================
 
     // IF (Instruction Fetch)
-	 assign br_target = pc_wb + imm_wb[`PC_WIDTH:0];
+	 assign br_target = pc_wb + imm_wb[`PC_WIDTH-1:0];
 	 prog_counter u_prog_counter(
 		.clk(clk),
 		.rst_n(rst_n),
@@ -104,14 +105,15 @@ module datapath (
 		.pc_out(pc_if)
 	 );
 	 
-	 assign i_mem_addr_out = (pc_mux_sel_wb) ? br_target : pc_if;
+	 assign pc_fetch = (pc_mux_sel_wb) ? br_target : pc_if;
+	 assign i_mem_addr_out = pc_fetch;
 	 assign instr_id = i_mem_data_in;
 	 
 	 pipeline_reg #(.REGS(`PC_WIDTH)) if_id_stage (
 		.clk(clk),
 		.rst_n(rst_n),
 		.en(1'b1),
-		.D(pc_if),
+		.D(pc_fetch),
 		.Q(pc_id)
 	 );
 
