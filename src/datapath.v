@@ -1,5 +1,5 @@
 `timescale 1ns / 1ps
-// CPU module
+// Datapath module
 
 `include "defines.v"
 
@@ -15,7 +15,8 @@ module datapath (
     input  wire [`DATA_WIDTH-1:0]        d_mem_data_in,
     output wire [`D_MEM_ADDR_WIDTH-1:0]  d_mem_addr_out,
     output wire [`DATA_WIDTH-1:0]        d_mem_data_out,
-    output wire                          d_mem_wen_out
+    output wire                          d_mem_wen_out,
+		output wire 												 cpu_done
 );
 
     // ============================================================
@@ -24,6 +25,7 @@ module datapath (
 
     // IF (Instruction Fetch)
 	 wire [`PC_WIDTH-1:0] pc_if;
+	 assign cpu_done = (pc_if == {`PC_WIDTH{1'b1}});
 	 wire [`INSTR_WIDTH-1:0] instr_if;
 	 wire pc_en;
 	 wire [`PC_WIDTH-1:0] br_target;

@@ -1,11 +1,11 @@
 `timescale 1ns/1ps
 
-module top_tb;
+module cpu_test_tb;
 
   reg clk;
   reg rst_n;
 
-  top dut (
+  cpu_test dut (
     .clk(clk),
     .rst_n(rst_n)
   );
@@ -74,8 +74,8 @@ end
 
   // Waves
   initial begin
-    $dumpfile("top_tb.vcd");
-    $dumpvars(0, top_tb);             // everything inside top
+    $dumpfile("cpu_test_tb.vcd");
+    $dumpvars(0, cpu_test_tb);             // everything inside cpu
 	 $dumpvars(0, dut.u_datapath);
   end
 
