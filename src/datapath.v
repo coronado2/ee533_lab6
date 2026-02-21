@@ -76,7 +76,7 @@ module datapath (
 	 wire [`REG_ADDR_WIDTH-1:0] wreg1_mem;
 	 wire [`DATA_WIDTH-1:0] r1out_mem;
 	 wire [`DATA_WIDTH-1:0] r2out_mem;
-	 wire [`DATA_WIDTH-1:0] d_mem_data_mem;
+	 //wire [`DATA_WIDTH-1:0] d_mem_data_mem;
 	 wire [`DATA_WIDTH-1:0] alu_result_mem;
 
 
@@ -105,14 +105,14 @@ module datapath (
 	 );
 	 
 	 assign i_mem_addr_out = (pc_mux_sel_wb) ? br_target : pc_if;
-	 assign instr_if = i_mem_data_in;
+	 assign instr_id = i_mem_data_in;
 	 
-	 pipeline_reg #(.REGS(`PC_WIDTH+`INSTR_WIDTH)) if_id_stage (
+	 pipeline_reg #(.REGS(`PC_WIDTH)) if_id_stage (
 		.clk(clk),
 		.rst_n(rst_n),
 		.en(1'b1),
-		.D({pc_if, instr_if}),
-		.Q({pc_id, instr_id})
+		.D(pc_if),
+		.Q(pc_id)
 	 );
 
     // ID (Decode)
@@ -212,18 +212,18 @@ module datapath (
 	 assign d_mem_addr_out = alu_result_mem;
 	 assign d_mem_data_out = r2out_mem;
 	 assign d_mem_wen_out = wmemen_mem;
-	 assign d_mem_data_mem = d_mem_data_in;
+	// assign d_mem_data_mem = d_mem_data_in;
 	 
-	 pipeline_reg #(.REGS(`PC_WIDTH+1+1+1+`DATA_WIDTH+`REG_ADDR_WIDTH+`DATA_WIDTH+`DATA_WIDTH)) mem_wb_stage(
+	 pipeline_reg #(.REGS(`PC_WIDTH+1+1+1+`REG_ADDR_WIDTH+`DATA_WIDTH+`DATA_WIDTH)) mem_wb_stage(
 		.clk(clk),
 		.rst_n(rst_n),
 		.en(1'b1),
-		.D({pc_mem, pc_mux_sel_mem, wregen_mem, mem_to_reg_mem, d_mem_data_mem, wreg1_mem, alu_result_mem, imm_mem}),
-		.Q({pc_wb, pc_mux_sel_wb, wregen_wb, mem_to_reg_wb, d_mem_data_wb, wreg1_wb, alu_result_wb, imm_wb})
+		.D({pc_mem, pc_mux_sel_mem, wregen_mem, mem_to_reg_mem, wreg1_mem, alu_result_mem, imm_mem}),
+		.Q({pc_wb, pc_mux_sel_wb, wregen_wb, mem_to_reg_wb, wreg1_wb, alu_result_wb, imm_wb})
 	 );
 
     // WB (Write Back)
-	 assign write_data = (mem_to_reg_wb) ? d_mem_data_wb : alu_result_wb;
+	 assign write_data = (mem_to_reg_wb) ? d_mem_data_in : alu_result_wb;
 
 endmodule
 
