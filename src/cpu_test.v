@@ -18,7 +18,7 @@ module cpu_test(
 	 wire cpu_done;
 	 
 	 i_mem u_i_mem(
-		.addr(i_mem_addr_out[8:0]),
+		.addr(i_mem_addr_out[10:0]),
 		.clk(clk),
 		.dout(i_mem_data_in)
 	 );
@@ -36,11 +36,17 @@ module cpu_test(
 	 );
 	 
 	 d_mem u_d_mem(
-		.addr(d_mem_addr_out[7:0]),
-		.clk(clk),
-		.din(d_mem_data_out),
-		.dout(d_mem_data_in),
-		.we(d_mem_wren)
+		.addra(d_mem_addr_out[9:0]),
+		.clka(clk),
+		.dina(d_mem_data_out),
+		.douta(d_mem_data_in),
+		.wea(d_mem_wren),
+		// Port B (Unused)
+		.addrb(10'b0),
+		.clkb(1'b0),
+		.dinb(64'b0),
+		.doutb(),
+		.web(1'b0)
 	 );
 	 
 endmodule
