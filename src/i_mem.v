@@ -40,31 +40,35 @@
 module i_mem(
 	addr,
 	clk,
-	dout);
+	din,
+	dout,
+	we);
 
 
-input [8 : 0] addr;
+input [10 : 0] addr;
 input clk;
+input [31 : 0] din;
 output [31 : 0] dout;
+input we;
 
 // synthesis translate_off
 
       BLKMEMSP_V6_2 #(
-		.c_addr_width(9),
+		.c_addr_width(11),
 		.c_default_data("0"),
-		.c_depth(512),
+		.c_depth(2048),
 		.c_enable_rlocs(0),
-		.c_has_default_data(0),
-		.c_has_din(0),
+		.c_has_default_data(1),
+		.c_has_din(1),
 		.c_has_en(0),
 		.c_has_limit_data_pitch(0),
 		.c_has_nd(0),
 		.c_has_rdy(0),
 		.c_has_rfd(0),
 		.c_has_sinit(0),
-		.c_has_we(0),
+		.c_has_we(1),
 		.c_limit_data_pitch(18),
-		.c_mem_init_file("i_mem.mif"),
+		.c_mem_init_file("mif_file_16_1"),
 		.c_pipe_stages(0),
 		.c_reg_inputs(0),
 		.c_sinit_value("0"),
@@ -84,14 +88,14 @@ output [31 : 0] dout;
 	inst (
 		.ADDR(addr),
 		.CLK(clk),
+		.DIN(din),
 		.DOUT(dout),
-		.DIN(),
+		.WE(we),
 		.EN(),
 		.ND(),
 		.RFD(),
 		.RDY(),
-		.SINIT(),
-		.WE());
+		.SINIT());
 
 
 // synthesis translate_on

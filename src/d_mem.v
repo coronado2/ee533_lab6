@@ -38,64 +38,105 @@
 `timescale 1ns/1ps
 
 module d_mem(
-	addr,
-	clk,
-	din,
-	dout,
-	we);
+	addra,
+	addrb,
+	clka,
+	clkb,
+	dina,
+	dinb,
+	douta,
+	doutb,
+	wea,
+	web);
 
 
-input [7 : 0] addr;
-input clk;
-input [63 : 0] din;
-output [63 : 0] dout;
-input we;
+input [9 : 0] addra;
+input [9 : 0] addrb;
+input clka;
+input clkb;
+input [63 : 0] dina;
+input [63 : 0] dinb;
+output [63 : 0] douta;
+output [63 : 0] doutb;
+input wea;
+input web;
 
 // synthesis translate_off
 
-      BLKMEMSP_V6_2 #(
-		.c_addr_width(8),
+      BLKMEMDP_V6_3 #(
+		.c_addra_width(10),
+		.c_addrb_width(10),
 		.c_default_data("0"),
-		.c_depth(256),
+		.c_depth_a(1024),
+		.c_depth_b(1024),
 		.c_enable_rlocs(0),
-		.c_has_default_data(0),
-		.c_has_din(1),
-		.c_has_en(0),
+		.c_has_default_data(1),
+		.c_has_dina(1),
+		.c_has_dinb(1),
+		.c_has_douta(1),
+		.c_has_doutb(1),
+		.c_has_ena(0),
+		.c_has_enb(0),
 		.c_has_limit_data_pitch(0),
-		.c_has_nd(0),
-		.c_has_rdy(0),
-		.c_has_rfd(0),
-		.c_has_sinit(0),
-		.c_has_we(1),
+		.c_has_nda(0),
+		.c_has_ndb(0),
+		.c_has_rdya(0),
+		.c_has_rdyb(0),
+		.c_has_rfda(0),
+		.c_has_rfdb(0),
+		.c_has_sinita(0),
+		.c_has_sinitb(0),
+		.c_has_wea(1),
+		.c_has_web(1),
 		.c_limit_data_pitch(18),
-		.c_mem_init_file("d_mem.mif"),
-		.c_pipe_stages(0),
-		.c_reg_inputs(0),
-		.c_sinit_value("0"),
-		.c_width(64),
-		.c_write_mode(0),
+		.c_mem_init_file("mif_file_16_1"),
+		.c_pipe_stages_a(0),
+		.c_pipe_stages_b(0),
+		.c_reg_inputsa(0),
+		.c_reg_inputsb(0),
+		.c_sim_collision_check("NONE"),
+		.c_sinita_value("0"),
+		.c_sinitb_value("0"),
+		.c_width_a(64),
+		.c_width_b(64),
+		.c_write_modea(0),
+		.c_write_modeb(0),
 		.c_ybottom_addr("0"),
-		.c_yclk_is_rising(1),
-		.c_yen_is_high(1),
+		.c_yclka_is_rising(1),
+		.c_yclkb_is_rising(1),
+		.c_yena_is_high(1),
+		.c_yenb_is_high(1),
 		.c_yhierarchy("hierarchy1"),
 		.c_ymake_bmm(0),
 		.c_yprimitive_type("16kx1"),
-		.c_ysinit_is_high(1),
+		.c_ysinita_is_high(1),
+		.c_ysinitb_is_high(1),
 		.c_ytop_addr("1024"),
 		.c_yuse_single_primitive(0),
-		.c_ywe_is_high(1),
+		.c_ywea_is_high(1),
+		.c_yweb_is_high(1),
 		.c_yydisable_warnings(1))
 	inst (
-		.ADDR(addr),
-		.CLK(clk),
-		.DIN(din),
-		.DOUT(dout),
-		.WE(we),
-		.EN(),
-		.ND(),
-		.RFD(),
-		.RDY(),
-		.SINIT());
+		.ADDRA(addra),
+		.ADDRB(addrb),
+		.CLKA(clka),
+		.CLKB(clkb),
+		.DINA(dina),
+		.DINB(dinb),
+		.DOUTA(douta),
+		.DOUTB(doutb),
+		.WEA(wea),
+		.WEB(web),
+		.ENA(),
+		.ENB(),
+		.NDA(),
+		.NDB(),
+		.RFDA(),
+		.RFDB(),
+		.RDYA(),
+		.RDYB(),
+		.SINITA(),
+		.SINITB());
 
 
 // synthesis translate_on

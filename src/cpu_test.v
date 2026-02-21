@@ -4,7 +4,7 @@
 
 `include "defines.v"
 
-module top(
+module cpu_test(
 	 input wire clk,
 	 input wire rst_n
     );
