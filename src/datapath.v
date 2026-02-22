@@ -109,22 +109,21 @@ module datapath (
 	 assign br_target = pc_wb + imm_wb[`PC_WIDTH-1:0];
 	 assign pc_fetch = (pc_mux_sel_wb) ? br_target : pc_if;
 	 assign i_mem_addr_out = pc_fetch;
-	 assign instr_id = i_mem_data_in;
 	 
 	 // Ensure the first instr is valid
-	 assign @(posedge clk or negedge rst_n) begin
+	 always @(posedge clk or negedge rst_n) begin
 	 	if (!rst_n) 
 			valid_instr <= 1'b0;
 		else 
 			valid_instr <=1'b1;
 	end
 
-	 pipeline_reg #(.REGS(`PC_WIDTH)) if_id_stage (
+	 pipeline_reg #(.REGS(`PC_WIDTH+`INSTR_WIDTH)) if_id_stage (
 		.clk(clk),
 		.rst_n(rst_n),
 		.en(valid_instr),
-		.D(pc_fetch),
-		.Q(pc_id)
+		.D({pc_fetch, i_mem_data_in}),
+		.Q({pc_id, instr_id})
 	 );
 
     // ID (Decode)

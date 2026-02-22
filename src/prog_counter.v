@@ -1,5 +1,6 @@
 `timescale 1ns / 1ps
 // Program counter module
+`include "defines.v"
 module prog_counter #(
     parameter PC_WIDTH = `PC_WIDTH
 )(
