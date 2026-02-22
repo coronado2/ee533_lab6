@@ -1,49 +1,53 @@
-	.cpu arm7tdmi
-	.arch armv4t
-	.fpu softvfp
-	.eabi_attribute 20, 1
-	.eabi_attribute 21, 1
-	.eabi_attribute 23, 3
-	.eabi_attribute 24, 1
-	.eabi_attribute 25, 1
-	.eabi_attribute 26, 1
-	.eabi_attribute 30, 6
-	.eabi_attribute 34, 0
-	.eabi_attribute 18, 4
-	.file	"decrementer.c"
-	.text
-	.align	2
-	.global	main
-	.syntax unified
-	.arm
-	.type	main, %function
-main:
-	@ Function supports interworking.
-	@ args = 0, pretend = 0, frame = 16
-	@ frame_needed = 1, uses_anonymous_args = 0
-	@ link register save eliminated.
-	str	fp, [sp, #-4]!
-	add	fp, sp, #0
-	sub	sp, sp, #20
-	str	r0, [fp, #-16]
-	mov	r3, #20
-	str	r3, [fp, #-8]
-	b	.L2
-.L3:
-	ldr	r3, [fp, #-8]
-	str	r3, [fp, #-12]
-	ldr	r3, [fp, #-8]
-	sub	r3, r3, #1
-	str	r3, [fp, #-8]
-.L2:
-	ldr	r3, [fp, #-8]
-	cmp	r3, #0
-	bgt	.L3
-	nop
-	nop
-	add	sp, fp, #0
-	@ sp needed
-	ldr	fp, [sp], #4
-	bx	lr
-	.size	main, .-main
-	.ident	"GCC: (Arm GNU Toolchain 15.2.Rel1 (Build arm-15.86)) 15.2.1 20251203"
+# -------------------------
+# Initialize stack pointer
+# -------------------------
+
+ADDI r7, r0, 256      # sp = 256
+
+# -------------------------
+# Prologue
+# -------------------------
+
+ADDI r7, r7, -4
+SW   r6, 0(r7)
+ADDI r6, r7, 0
+ADDI r7, r7, -20
+
+# counter = 20
+ADDI r2, r0, 20
+SW   r2, -8(r6)
+
+J L2
+
+# -------------------------
+# Loop Body
+# -------------------------
+
+L3:
+LW   r2, -8(r6)       # r2 = counter
+SW   r2, -12(r6)      # temp = counter
+
+LW   r2, -8(r6)
+ADDI r2, r2, -1       # counter--
+SW   r2, -8(r6)
+
+# -------------------------
+# Loop Test
+# while(counter > 0)
+# -------------------------
+
+L2:
+LW   r2, -8(r6)
+SLT  r3, r0, r2       # r3 = (0 < counter)
+BNE  r3, r0, L3
+
+# -------------------------
+# Epilogue
+# -------------------------
+
+ADDI r7, r6, 0
+LW   r6, 0(r7)
+ADDI r7, r7, 4
+
+end:
+J end
