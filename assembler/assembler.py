@@ -186,4 +186,4 @@ if __name__ == "__main__":
     machine = assemble(lines)
 
     for word in machine:
-        print(f"{word:08X}")
+        print(f"{word:08X},")
