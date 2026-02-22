@@ -20,7 +20,9 @@ module cpu_test(
 	 i_mem u_i_mem(
 		.addr(i_mem_addr_out[10:0]),
 		.clk(clk),
-		.dout(i_mem_data_in)
+		.din(32'b0),
+		.dout(i_mem_data_in),
+		.we(1'b0)
 	 );
 	 
 	 datapath u_datapath(

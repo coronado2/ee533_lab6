@@ -27,7 +27,7 @@ module datapath (
 	 wire [`PC_WIDTH-1:0] pc_if;
 	 wire [`PC_WIDTH-1:0] pc_fetch;
 	 assign cpu_done = (pc_if == {`PC_WIDTH{1'b1}});
-	 wire [`INSTR_WIDTH-1:0] instr_if;
+	 //wire [`INSTR_WIDTH-1:0] instr_if;
 	 wire pc_en;
 	 wire [`PC_WIDTH-1:0] br_target;
 	 assign pc_en = 1'b1; // update pc every clock
@@ -77,7 +77,7 @@ module datapath (
 	 wire [`REG_ADDR_WIDTH-1:0] wreg1_mem;
 	 wire [`DATA_WIDTH-1:0] r1out_mem;
 	 wire [`DATA_WIDTH-1:0] r2out_mem;
-	 //wire [`DATA_WIDTH-1:0] d_mem_data_mem;
+	 wire [`DATA_WIDTH-1:0] d_mem_data_mem;
 	 wire [`DATA_WIDTH-1:0] alu_result_mem;
 
 
@@ -88,7 +88,7 @@ module datapath (
 	 wire mem_to_reg_wb;
 	 wire [`DATA_WIDTH-1:0] imm_wb;
 	 wire [`REG_ADDR_WIDTH-1:0] wreg1_wb;
-	 wire [`DATA_WIDTH-1:0] d_mem_data_wb;
+	 //wire [`DATA_WIDTH-1:0] d_mem_data_wb;
 	 wire [`DATA_WIDTH-1:0] alu_result_wb;
 	 wire [`DATA_WIDTH-1:0] write_data;
 
@@ -172,6 +172,7 @@ module datapath (
 	
 	 regfile u_regfile (
 		.clk(clk),
+		.rst_n(rst_n),
 		.wena(wregen_wb),
       .waddr(wreg1_wb),
       .wdata(write_data),
@@ -214,7 +215,7 @@ module datapath (
 	 assign d_mem_addr_out = alu_result_mem;
 	 assign d_mem_data_out = r2out_mem;
 	 assign d_mem_wen_out = wmemen_mem;
-	// assign d_mem_data_mem = d_mem_data_in;
+	 assign d_mem_data_mem = d_mem_data_in;
 	 
 	 pipeline_reg #(.REGS(`PC_WIDTH+1+1+1+`REG_ADDR_WIDTH+`DATA_WIDTH+`DATA_WIDTH)) mem_wb_stage(
 		.clk(clk),
@@ -225,7 +226,7 @@ module datapath (
 	 );
 
     // WB (Write Back)
-	 assign write_data = (mem_to_reg_wb) ? d_mem_data_in : alu_result_wb;
+	 assign write_data = (mem_to_reg_wb) ? d_mem_data_mem : alu_result_wb;
 
 endmodule
 
