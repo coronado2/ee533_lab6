@@ -1,49 +1,24 @@
 ADDI r4, r0, 352
-NOP
-NOP
-NOP
-
 ADDI r1, r0, 111
 NOP
 NOP
 NOP
-NOP
-
 SW   r1, 0(r4)
-NOP
-NOP
-NOP
-
 ADDI r2, r0, 1
+ADDI r3, r0, 0
 NOP
 NOP
 NOP
-NOP
-
-ADDI r3, r0, 1
-NOP
-NOP
-NOP
-NOP
-
 BNE  r2, r3, skip_bad
 NOP
 NOP
 NOP
-NOP      
-
+NOP   
 ADDI r1, r0, 222
 NOP
 NOP
 NOP
-NOP
-
 SW   r1, 0(r4)
-NOP
-NOP
-NOP
-NOP
-
 skip_bad:
 end:
 J end
