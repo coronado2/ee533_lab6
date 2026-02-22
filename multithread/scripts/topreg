@@ -1,0 +1,264 @@
+#!/usr/bin/perl -w
+#
+# file: topreg
+# Description: Control script for Top NetFPGA register interface
+#
+
+use strict;
+
+# ================================================================
+# Register Address Map
+# ================================================================
+
+# Software Registers
+my $TOP_SW_REQ_CMD_REG       = 0x2000200;
+my $TOP_SW_REQ_ADDR_REG      = 0x2000204;
+my $TOP_SW_REQ_DATA_LO_REG   = 0x2000208;
+my $TOP_SW_REQ_DATA_HI_REG   = 0x200020c;
+my $TOP_SW_REQ_VAL_REG       = 0x2000210;
+my $TOP_SW_RESP_RDY_REG      = 0x2000214;
+my $TOP_SW_CPU_START_REG     = 0x2000218;
+
+# Hardware Registers
+my $TOP_HW_REQ_RDY_REG       = 0x200021c;
+my $TOP_HW_RESP_DATA_LO_REG  = 0x2000220;
+my $TOP_HW_RESP_DATA_HI_REG  = 0x2000224;
+my $TOP_HW_RESP_VAL_REG      = 0x2000228;
+
+# ================================================================
+# Base Addresses
+# ================================================================
+
+my $IMEM_BASE = 0x00000000;
+my $CTRL_BASE = 0x40000000;
+my $DMEM_BASE = 0x80000000;
+
+# ================================================================
+# Lab6 Program/Data
+# ================================================================
+
+# ================================================================
+# Low Level Register Access
+# ================================================================
+
+sub regwrite {
+    my ($addr, $value) = @_;
+    system(sprintf("regwrite 0x%08x 0x%08x 2>/dev/null", $addr, $value));
+}
+
+sub regread {
+    my ($addr) = @_;
+    my @out = `regread 0x@{[sprintf("%08x",$addr)]} 2>/dev/null`;
+    my $result = 0;
+    foreach my $line (@out) {
+        if ($line =~ m/:\s+(0x[0-9a-f]+)/i) {
+            $result = hex($1);
+            last;
+        }
+    }
+    return $result;
+}
+
+# ================================================================
+# MMIO Helpers
+# ================================================================
+
+sub wait_req_rdy {
+    for (1..5000) {
+        return 1 if (regread($TOP_HW_REQ_RDY_REG) & 0x1);
+        select(undef, undef, undef, 0.001);
+    }
+    print "Timeout req_rdy\n";
+    return 0;
+}
+
+sub wait_resp_val {
+    for (1..5000) {
+        return 1 if (regread($TOP_HW_RESP_VAL_REG) & 0x1);
+        select(undef, undef, undef, 0.001);
+    }
+    print "Timeout resp_val\n";
+    return 0;
+}
+
+sub mmio_write {
+    my ($addr, $data) = @_;
+    return unless wait_req_rdy();
+
+    regwrite($TOP_SW_REQ_ADDR_REG, $addr);
+    regwrite($TOP_SW_REQ_DATA_LO_REG, $data & 0xffffffff);
+    regwrite($TOP_SW_REQ_DATA_HI_REG, ($data >> 32) & 0xffffffff);
+
+    regwrite($TOP_SW_REQ_CMD_REG, 0x1);
+    regwrite($TOP_SW_RESP_RDY_REG, 0x1);
+    regwrite($TOP_SW_REQ_VAL_REG, 0x1);
+
+    return unless wait_resp_val();
+
+    regwrite($TOP_SW_REQ_VAL_REG, 0x0);
+    regwrite($TOP_SW_RESP_RDY_REG, 0x0);
+}
+
+sub mmio_read {
+    my ($addr) = @_;
+    return 0 unless wait_req_rdy();
+
+    regwrite($TOP_SW_REQ_ADDR_REG, $addr);
+    regwrite($TOP_SW_REQ_CMD_REG, 0x0);
+    regwrite($TOP_SW_RESP_RDY_REG, 0x1);
+    regwrite($TOP_SW_REQ_VAL_REG, 0x1);
+
+    return 0 unless wait_resp_val();
+
+    my $lo = regread($TOP_HW_RESP_DATA_LO_REG);
+    my $hi = regread($TOP_HW_RESP_DATA_HI_REG);
+
+    regwrite($TOP_SW_REQ_VAL_REG, 0x0);
+    regwrite($TOP_SW_RESP_RDY_REG, 0x0);
+
+    return ($hi << 32) | $lo;
+}
+
+# ================================================================
+# Hex File Loader
+# ================================================================
+
+sub load_hex_file {
+    my ($filename) = @_;
+    my @data;
+
+    open(my $fh, "<", $filename) or die "Cannot open $filename\n";
+
+    while (my $line = <$fh>) {
+        chomp $line;
+        $line =~ s/^\s+|\s+$//g;     # trim whitespace
+        next if $line eq "";         # skip empty lines
+        next if $line =~ /^#/;       # skip comments
+
+        push @data, hex($line);
+    }
+
+    close($fh);
+    return @data;
+}
+
+# ================================================================
+# Tasks
+# ================================================================
+
+sub reset_all {
+    print "Resetting system...\n";
+    regwrite($TOP_SW_CPU_START_REG, 0x0);
+    regwrite($TOP_SW_REQ_VAL_REG, 0x0);
+    regwrite($TOP_SW_RESP_RDY_REG, 0x0);
+    select(undef, undef, undef, 0.1);
+}
+
+sub load_imem {
+    print "Loading instruction memory...\n";
+    my @imem_coe = load_hex_file("imem.hex");
+
+    for (my $i = 0; $i < @imem_coe; $i++) {
+        mmio_write($IMEM_BASE | $i, $imem_coe[$i]);
+    }
+}
+
+sub load_dmem {
+    print "Loading data memory...\n";
+    my @dmem_coe = load_hex_file("dmem.hex");
+
+    for (my $i = 0; $i < @dmem_coe; $i++) {
+        mmio_write($DMEM_BASE | $i, $dmem_coe[$i]);
+    }
+}
+
+sub clear_dmem {
+    print "Clearing DMEM [0..50]...\n";
+
+    for (my $i = 0; $i <= 50; $i++) {
+        mmio_write($DMEM_BASE | $i, 0x0);
+    }
+
+    print "DMEM cleared.\n";
+}
+
+sub start_cpu {
+    print "Starting CPU...\n";
+    regwrite($TOP_SW_CPU_START_REG, 0x1);
+}
+
+sub stop_cpu {
+    regwrite($TOP_SW_CPU_START_REG, 0x0);
+    select(undef, undef, undef, 0.1);
+}
+
+# ================================================================
+# Manual Read
+# ================================================================
+
+sub read_region {
+    my ($region, $offset) = @_;
+    stop_cpu();
+
+    if ($region eq "imem") {
+
+        if (!defined $offset) {
+            print "Usage: topreg read imem <index>\n";
+            return;
+        }
+
+        my $val64 = mmio_read($IMEM_BASE | $offset);
+        my $val32 = $val64 & 0xffffffff;
+
+        printf("IMEM[%d] = 0x%08x\n", $offset, $val32);
+    }
+
+    elsif ($region eq "dmem") {
+
+        if (!defined $offset) {
+            print "Usage: topreg read dmem <index>\n";
+            return;
+        }
+
+        my $val = mmio_read($DMEM_BASE | $offset);
+        printf("DMEM[%d] = 0x%016x\n", $offset, $val);
+    }
+
+    elsif ($region eq "ctrl") {
+
+        my $val = mmio_read($CTRL_BASE);
+        printf("CTRL = 0x%016x\n", $val);
+    }
+
+    else {
+        print "Usage:\n";
+        print "  topreg read imem <index>\n";
+        print "  topreg read dmem <index>\n";
+        print "  topreg read ctrl\n";
+    }
+}
+
+# ================================================================
+# Main
+# ================================================================
+
+my $cmd = $ARGV[0] || "help";
+
+if ($cmd eq "start") {
+    start_cpu();
+    sleep(1);
+}
+elsif ($cmd eq "load") {
+    reset_all();
+    load_imem();
+}
+elsif ($cmd eq "reset") {
+    reset_all();
+    clear_dmem();
+}
+elsif ($cmd eq "read") {
+    read_region($ARGV[1], $ARGV[2]);
+}
+else {
+    print "Usage: topreg [reset | load | start | read]\n";
+}
