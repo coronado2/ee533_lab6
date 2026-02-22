@@ -45,6 +45,9 @@ def sign_extend(val, bits):
 # ENCODERS
 # =========================
 
+def encode_nop():
+    return (1<<29)
+
 def encode_rtype(op, rd, rs1, rs2):
     word = 0
     word |= (0b00 << 30)
@@ -130,7 +133,9 @@ def assemble(lines):
 
         op = parts[0].upper()
 
-        if op in ALU_OPS:
+        if op == "NOP":
+            word = encode_nop()
+        elif op in ALU_OPS:
             rd = regnum(parts[1])
             rs1 = regnum(parts[2])
             rs2 = regnum(parts[3])

@@ -5,13 +5,12 @@ module cpu_test_tb;
   reg clk;
   reg rst_n;
 
-  // DUT
   cpu_test dut (
     .clk(clk),
     .rst_n(rst_n)
   );
 
-  // clock: 10ns period
+  // clock
   initial begin
     clk = 0;
     forever #5 clk = ~clk;
@@ -26,40 +25,55 @@ module cpu_test_tb;
 
   integer cyc;
   initial cyc = 0;
+
   always @(posedge clk) begin
     if (!rst_n) cyc <= 0;
     else        cyc <= cyc + 1;
   end
 
-  // Pretty header
+  // header
   initial begin
-    $display("cyc | pc_if      imem_addr  imem_dout  | instr_id   major | WB: wena waddr wdata");
-    $display("----+----------------------------------+--------------------+------------------------");
+    $display("");
+    $display("cyc | IF:pc       IM:addr    IM:dout    || ID:pc       ID:instr   op || EX:alu_res  pc_sel || MEM:we addr  wdata               rdata               || WB:we rd wdata");
+    $display("----+----------------------------------++--------------------------------+---------------------+-----------------------------------------------+---------------------------");
   end
 
+  // cycle trace
   always @(negedge clk) begin
     if (rst_n) begin
-      $display("%3d | %08h  %08h  %08h | %08h    %02b   |     %0d   %02h  %016h",
+      $display(
+        "%3d | %08h  %08h  %08h || %08h  %08h  %02b || %08h     %1d    ||   %1d  %04h  %016h  %016h ||   %1d  %02h  %016h",
         cyc,
-
-        // PC in IF 
         dut.u_datapath.pc_if,
-
         dut.i_mem_addr_out,
         dut.i_mem_data_in,
-
+        dut.u_datapath.pc_id,
         dut.u_datapath.instr_id,
         dut.u_datapath.major_op,
-
+        dut.u_datapath.alu_result_ex,
+        dut.u_datapath.pc_mux_sel_ex,
+        dut.u_datapath.wmemen_mem,
+        dut.d_mem_addr_out,
+        dut.d_mem_data_out,
+        dut.d_mem_data_in,
         dut.u_datapath.wregen_wb,
         dut.u_datapath.wreg1_wb,
         dut.u_datapath.write_data
       );
+
+      if (dut.u_datapath.wmemen_mem)
+        $display("      STORE  MEM[%0d] <= %016h", dut.d_mem_addr_out, dut.d_mem_data_out);
+
+      if (dut.u_datapath.wregen_wb)
+        $display("      WB     R[%0d] <= %016h", dut.u_datapath.wreg1_wb, dut.u_datapath.write_data);
+
+      if (dut.u_datapath.pc_mux_sel_ex)
+        $display("      BRANCH pc mux select asserted");
     end
   end
 
   initial begin
-    repeat(40) @(posedge clk);
+    repeat(400) @(posedge clk);
     $finish;
   end
 

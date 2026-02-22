@@ -37,6 +37,7 @@ module datapath (
 	 wire [`PC_WIDTH-1:0] pc_id;
 	 wire [`INSTR_WIDTH-1:0] instr_id;
 	 wire [1:0] major_op;
+	 wire is_noop;
 	 reg wregen_id;
 	 reg wmemen_id;
 	 reg mem_to_reg_id;
@@ -128,6 +129,7 @@ module datapath (
 
     // ID (Decode)
 	 assign major_op = instr_id[31:30];	// ALU: 00, LW: 01, SW: 10, 11 Branch
+	 assign is_noop = instr_id[29];
 	 always @(*) begin
 		wmemen_id = 1'b0;
 		wregen_id = 1'b0;
@@ -141,42 +143,57 @@ module datapath (
 		alu_src_id = 1'b0;
 		imm_id = 64'b0;
 
-	 	case(major_op)
-			2'b00:	begin	//R-type and I-type
-				wregen_id = 1'b1;
-				reg1_id = instr_id[28:25];
-				reg2_id = instr_id[24:21];
-				wreg1_id = instr_id[20:17];
-				alu_op_id = instr_id[16:13];
-				alu_src_id = instr_id[12];
-				imm_id = {{(64-12){instr_id[11]}}, instr_id[11:0]};
-			end
-			2'b01: begin	//LW
-				wregen_id = 1'b1;	//regWrite
-				mem_to_reg_id = 1'b1;
-				reg1_id = instr_id[28:25];
-				wreg1_id = instr_id[24:21];
-				alu_op_id = 4'b0;	// Force add
-				alu_src_id = 1'b1;	// Force use offset
-				imm_id = {{(64-21){instr_id[20]}}, instr_id[20:0]};
-			end
-			2'b10: begin	//SW
-				wmemen_id = 1'b1;	//memWrite
-				reg1_id = instr_id[28:25];
-				reg2_id = instr_id[24:21];
-				alu_op_id = 4'b0;	// Force add
-				alu_src_id = 1'b1;	// Force use offset
-				imm_id = {{(64-21){instr_id[20]}}, instr_id[20:0]};
-			end
-			2'b11: begin	//Branch
-				br_en_id = 1'b1;
-				reg1_id = instr_id[28:25];
-				reg2_id = instr_id[24:21];
-				cond_id = instr_id[20:19];
-				alu_op_id = 4'b1001;	// eq opcode
-				imm_id = {{(64-9){instr_id[8]}}, instr_id[8:0]};	//PC Width
-			end
-		endcase
+		if (is_noop) begin
+			wmemen_id     = 1'b0;
+			wregen_id     = 1'b0;
+			mem_to_reg_id = 1'b0;
+			br_en_id      = 1'b0;
+			reg1_id       = 4'b0;
+			reg2_id       = 4'b0;
+			wreg1_id      = 4'b0;
+			cond_id       = 2'b0;
+			alu_op_id     = 4'b0;
+			alu_src_id    = 1'b0;
+			imm_id        = 64'b0;
+		end
+		else begin
+			case(major_op)
+				2'b00:	begin	//R-type and I-type
+					wregen_id = 1'b1;
+					reg1_id = instr_id[28:25];
+					reg2_id = instr_id[24:21];
+					wreg1_id = instr_id[20:17];
+					alu_op_id = instr_id[16:13];
+					alu_src_id = instr_id[12];
+					imm_id = {{(64-12){instr_id[11]}}, instr_id[11:0]};
+				end
+				2'b01: begin	//LW
+					wregen_id = 1'b1;	//regWrite
+					mem_to_reg_id = 1'b1;
+					reg1_id = instr_id[28:25];
+					wreg1_id = instr_id[24:21];
+					alu_op_id = 4'b0;	// Force add
+					alu_src_id = 1'b1;	// Force use offset
+					imm_id = {{(64-21){instr_id[20]}}, instr_id[20:0]};
+				end
+				2'b10: begin	//SW
+					wmemen_id = 1'b1;	//memWrite
+					reg1_id = instr_id[28:25];
+					reg2_id = instr_id[24:21];
+					alu_op_id = 4'b0;	// Force add
+					alu_src_id = 1'b1;	// Force use offset
+					imm_id = {{(64-21){instr_id[20]}}, instr_id[20:0]};
+				end
+				2'b11: begin	//Branch
+					br_en_id = 1'b1;
+					reg1_id = instr_id[28:25];
+					reg2_id = instr_id[24:21];
+					cond_id = instr_id[20:19];
+					alu_op_id = 4'b1001;	// eq opcode
+					imm_id = {{(64-9){instr_id[8]}}, instr_id[8:0]};	//PC Width
+				end
+			endcase
+		end
 	 end
 	
 	 regfile u_regfile (
