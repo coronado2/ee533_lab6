@@ -1,48 +1,57 @@
-	.cpu arm7tdmi
-	.arch armv4t
-	.fpu softvfp
-	.eabi_attribute 20, 1
-	.eabi_attribute 21, 1
-	.eabi_attribute 23, 3
-	.eabi_attribute 24, 1
-	.eabi_attribute 25, 1
-	.eabi_attribute 26, 1
-	.eabi_attribute 30, 6
-	.eabi_attribute 34, 0
-	.eabi_attribute 18, 4
-	.file	"counter.c"
-	.text
-	.align	2
-	.global	main
-	.syntax unified
-	.arm
-	.type	main, %function
-main:
-	@ Function supports interworking.
-	@ args = 0, pretend = 0, frame = 8
-	@ frame_needed = 1, uses_anonymous_args = 0
-	@ link register save eliminated.
-	str	fp, [sp, #-4]!
-	add	fp, sp, #0
-	sub	sp, sp, #12
-	mov	r3, #0
-	str	r3, [fp, #-8]
-	b	.L2
-.L3:
-	ldr	r3, [fp, #-8]
-	str	r3, [fp, #-12]
-	ldr	r3, [fp, #-8]
-	add	r3, r3, #1
-	str	r3, [fp, #-8]
-.L2:
-	ldr	r3, [fp, #-8]
-	cmp	r3, #19
-	ble	.L3
-	nop
-	nop
-	add	sp, fp, #0
-	@ sp needed
-	ldr	fp, [sp], #4
-	bx	lr
-	.size	main, .-main
-	.ident	"GCC: (Arm GNU Toolchain 15.2.Rel1 (Build arm-15.86)) 15.2.1 20251203"
+# -------------------------
+# Initialize stack pointer
+# -------------------------
+
+ADDI r7, r0, 256      # sp = 256
+
+# -------------------------
+# Prologue
+# -------------------------
+
+ADDI r7, r7, -4       # sp -= 4
+SW   r6, 0(r7)        # push old fp
+ADDI r6, r7, 0        # fp = sp
+ADDI r7, r7, -12      # allocate 12 bytes
+
+# r4 = 20 (loop limit)
+ADDI r4, r0, 20
+
+# counter = 0
+ADDI r2, r0, 0
+SW   r2, -8(r6)
+
+J L2
+
+# -------------------------
+# Loop Body
+# -------------------------
+
+L3:
+LW   r2, -8(r6)       # r2 = counter
+SW   r2, -12(r6)      # temp = counter
+
+LW   r2, -8(r6)
+ADDI r2, r2, 1
+SW   r2, -8(r6)       # counter++
+
+# -------------------------
+# Loop Test
+# while(counter <= 19)
+# same as (counter < 20)
+# -------------------------
+
+L2:
+LW   r2, -8(r6)
+SLT  r3, r2, r4       # r3 = (counter < 20)
+BNE  r3, r0, L3
+
+# -------------------------
+# Epilogue
+# -------------------------
+
+ADDI r7, r6, 0        # sp = fp
+LW   r6, 0(r7)        # restore old fp
+ADDI r7, r7, 4        # pop
+
+end:
+J end
