@@ -31,6 +31,7 @@ module datapath (
 	 wire pc_en;
 	 wire [`PC_WIDTH-1:0] br_target;
 	 assign pc_en = 1'b1; // update pc every clock
+	 reg valid_instr;
 
     // ID (Decode)
 	 wire [`PC_WIDTH-1:0] pc_id;
@@ -97,7 +98,6 @@ module datapath (
     // ============================================================
 
     // IF (Instruction Fetch)
-	 assign br_target = pc_wb + imm_wb[`PC_WIDTH-1:0];
 	 prog_counter u_prog_counter(
 		.clk(clk),
 		.rst_n(rst_n),
@@ -105,14 +105,24 @@ module datapath (
 		.pc_out(pc_if)
 	 );
 	 
+	 // Select between next pc or target branch
+	 assign br_target = pc_wb + imm_wb[`PC_WIDTH-1:0];
 	 assign pc_fetch = (pc_mux_sel_wb) ? br_target : pc_if;
 	 assign i_mem_addr_out = pc_fetch;
 	 assign instr_id = i_mem_data_in;
 	 
+	 // Ensure the first instr is valid
+	 assign @(posedge clk or negedge rst_n) begin
+	 	if (!rst_n) 
+			valid_instr <= 1'b0;
+		else 
+			valid_instr <=1'b1;
+	end
+
 	 pipeline_reg #(.REGS(`PC_WIDTH)) if_id_stage (
 		.clk(clk),
 		.rst_n(rst_n),
-		.en(1'b1),
+		.en(valid_instr),
 		.D(pc_fetch),
 		.Q(pc_id)
 	 );
