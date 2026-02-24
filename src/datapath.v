@@ -16,7 +16,7 @@ module datapath (
     output wire [`D_MEM_ADDR_WIDTH-1:0]  d_mem_addr_out,
     output wire [`DATA_WIDTH-1:0]        d_mem_data_out,
     output wire                          d_mem_wen_out,
-		output wire 												 cpu_done
+	output wire 												 cpu_done
 );
 
     // ============================================================

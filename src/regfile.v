@@ -34,7 +34,7 @@ module regfile (
     always @(posedge clk or negedge rst_n) begin
         if(!rst_n) begin
             for (i=0; i<NUMREGS; i=i+1) begin
-                regs[i] = {`DATA_WIDTH{1'b0}};
+                regs[i] <= {`DATA_WIDTH{1'b0}};
             end
         end
         else if (wena) begin
