@@ -205,9 +205,4 @@ NOP
 NOP
 
 done:
-end:
-J end
-NOP
-NOP
-NOP
 NOP
