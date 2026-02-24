@@ -1,31 +1,8 @@
-ADDI  r7, r0, 512
+ADDI  r4, r0, 352
 NOP
 NOP
 NOP
-ADDI  r7, r7, -8
-NOP
-NOP
-NOP
-SW    r6, 0(r7)
-NOP
-NOP
-NOP
-ADDI  r6, r7, 0
-NOP
-NOP
-NOP
-ADDI  r7, r7, -160
-NOP
-NOP
-NOP
-ADDI  r4, r6, 0
-NOP
-NOP
-NOP
-ADDI  r4, r4, -152
-NOP
-NOP
-NOP
+
 ADDI  r1, r0, 323
 NOP
 NOP
@@ -34,7 +11,71 @@ SW    r1, 0(r4)
 NOP
 NOP
 NOP
+
 ADDI  r1, r0, 123
+NOP
+NOP
+NOP
+SW    r1, 1(r4)
+NOP
+NOP
+NOP
+
+ADDI  r1, r0, -455
+NOP
+NOP
+NOP
+SW    r1, 2(r4)
+NOP
+NOP
+NOP
+
+ADDI  r1, r0, 2
+NOP
+NOP
+NOP
+SW    r1, 3(r4)
+NOP
+NOP
+NOP
+
+ADDI  r1, r0, 98
+NOP
+NOP
+NOP
+SW    r1, 4(r4)
+NOP
+NOP
+NOP
+
+ADDI  r1, r0, 125
+NOP
+NOP
+NOP
+SW    r1, 5(r4)
+NOP
+NOP
+NOP
+
+ADDI  r1, r0, 10
+NOP
+NOP
+NOP
+SW    r1, 6(r4)
+NOP
+NOP
+NOP
+
+ADDI  r1, r0, 65
+NOP
+NOP
+NOP
+SW    r1, 7(r4)
+NOP
+NOP
+NOP
+
+ADDI  r1, r0, -56
 NOP
 NOP
 NOP
@@ -42,303 +83,122 @@ SW    r1, 8(r4)
 NOP
 NOP
 NOP
-ADDI  r1, r0, -455
-NOP
-NOP
-NOP
-SW    r1, 16(r4)
-NOP
-NOP
-NOP
-ADDI  r1, r0, 2
-NOP
-NOP
-NOP
-SW    r1, 24(r4)
-NOP
-NOP
-NOP
-ADDI  r1, r0, 98
-NOP
-NOP
-NOP
-SW    r1, 32(r4)
-NOP
-NOP
-NOP
-ADDI  r1, r0, 125
-NOP
-NOP
-NOP
-SW    r1, 40(r4)
-NOP
-NOP
-NOP
-ADDI  r1, r0, 10
-NOP
-NOP
-NOP
-SW    r1, 48(r4)
-NOP
-NOP
-NOP
-ADDI  r1, r0, 65
-NOP
-NOP
-NOP
-SW    r1, 56(r4)
-NOP
-NOP
-NOP
-ADDI  r1, r0, -56
-NOP
-NOP
-NOP
-SW    r1, 64(r4)
-NOP
-NOP
-NOP
+
 ADDI  r1, r0, 0
 NOP
 NOP
 NOP
-SW    r1, 72(r4)
+SW    r1, 9(r4)
 NOP
 NOP
 NOP
-ADDI  r1, r0, 9
+
+ADDI  r6, r0, 9
 NOP
 NOP
 NOP
-SW    r1, -8(r6)
-outer_loop:
-    LW    r2, -8(r6)
-    NOP
-    NOP
-    NOP
+NOP
 
-    SLT   r3, r0, r2
-    NOP
-    NOP
-    NOP
+NOP
+outer:
+BEQ   r6, r0, done
+NOP
+NOP
+NOP
+NOP
 
-    BNE   r3, r0, outer_continue
-    NOP
-    NOP
-    NOP
-    NOP
+ADDI  r3, r0, 0
+NOP
+NOP
+NOP
+ADD   r5, r4, r0
+NOP
+NOP
+NOP
 
-    J     sort_done
-    NOP
-    NOP
-    NOP
-    NOP
-outer_continue:
-    ADDI  r1, r0, 0
-    NOP
-    NOP
-    NOP
-    SW    r1, -16(r6)
+inner_cond:
+SLT   r2, r3, r6
+NOP
+NOP
+NOP
+BEQ   r2, r0, inner_done
+NOP
+NOP
+NOP
+NOP
 
+LW    r7, 0(r5)
+NOP
+NOP
+NOP
+LW    r1, 1(r5)
+NOP
+NOP
+NOP
 
-inner_loop:
-    LW    r3, -16(r6)
-    LW    r2, -8(r6)
-    NOP
-    NOP
-    NOP
+SLT   r7, r1, r7
+NOP
+NOP
+NOP
+BEQ   r7, r0, noswap
+NOP
+NOP
+NOP
+NOP
 
-    SLT   r1, r3, r2
-    NOP
-    NOP
-    NOP
+LW    r7, 0(r5)
+NOP
+NOP
+NOP
+LW    r1, 1(r5)
+NOP
+NOP
+NOP
 
-    BNE   r1, r0, inner_continue
-    NOP
-    NOP
-    NOP
-    NOP
+SW    r1, 0(r5)
+NOP
+NOP
+NOP
+SW    r7, 1(r5)
+NOP
+NOP
+NOP
 
-    J     inner_done
-    NOP
-    NOP
-    NOP
-    NOP
+noswap:
+ADDI  r5, r5, 1
+NOP
+NOP
+NOP
+ADDI  r3, r3, 1
+NOP
+NOP
+NOP
 
-inner_continue:
-    ADD   r5, r4, r0
-    NOP
-    NOP
-    NOP
-
-    ADDI  r1, r0, 0
-    NOP
-    NOP
-    NOP
-    SW    r1, -24(r6)
-
-
-addr_walk_A:
-    LW    r1, -24(r6)
-    NOP
-    NOP
-    NOP
-
-    SLT   r2, r1, r3
-    NOP
-    NOP
-    NOP
-
-    BNE   r2, r0, do_add8_A
-    NOP
-    NOP
-    NOP
-    NOP
-
-    J     addrA_done
-    NOP
-    NOP
-    NOP
-    NOP
-
-do_add8_A:
-    ADDI  r5, r5, 8
-    NOP
-    NOP
-    NOP
-
-    ADDI  r1, r1, 1
-    NOP
-    NOP
-    NOP
-    SW    r1, -24(r6)
-
-    J     addr_walk_A
-    NOP
-    NOP
-    NOP
-    NOP
-
-addrA_done:
-    LW    r1, 0(r5)
-    NOP
-    NOP
-    NOP
-
-    ADDI  r5, r5, 8
-    NOP
-    NOP
-    NOP
-
-    LW    r2, 0(r5)
-    NOP
-    NOP
-    NOP
-
-    SLT   r7, r2, r1
-    NOP
-    NOP
-    NOP
-
-    BNE   r7, r0, do_swap
-    NOP
-    NOP
-    NOP
-    NOP
-
-no_swap:
-    SW    r7, -24(r6)
-
-    LW    r3, -16(r6)
-    NOP
-    NOP
-    NOP
-
-    ADDI  r3, r3, 1
-    NOP
-    NOP
-    NOP
-    SW    r3, -16(r6)
-
-    LW    r7, -24(r6)
-    NOP
-    NOP
-    NOP
-
-    J     inner_loop
-    NOP
-    NOP
-    NOP
-    NOP
-
-do_swap:
-    ADDI  r5, r5, -8
-    NOP
-    NOP
-    NOP
-    SW    r2, 0(r5)
-
-    ADDI  r5, r5, 8
-    NOP
-    NOP
-    NOP
-    SW    r1, 0(r5)
-
-    LW    r3, -16(r6)
-    NOP
-    NOP
-    NOP
-
-    ADDI  r3, r3, 1
-    NOP
-    NOP
-    NOP
-    SW    r3, -16(r6)
-
-    J     inner_loop
-    NOP
-    NOP
-    NOP
-    NOP
+NOP
+inner_cond_jump:
+J     inner_cond
+NOP
+NOP
+NOP
+NOP
 
 inner_done:
-    LW    r2, -8(r6)
-    NOP
-    NOP
-    NOP
+ADDI  r6, r6, -1
+NOP
+NOP
+NOP
+NOP
 
-    ADDI  r2, r2, -1
-    NOP
-    NOP
-    NOP
-    SW    r2, -8(r6)
+J     outer
+NOP
+NOP
+NOP
+NOP
 
-    J     outer_loop
-    NOP
-    NOP
-    NOP
-    NOP
-
-sort_done:
-    ADDI  r7, r6, 0
-    NOP
-    NOP
-    NOP
-
-    LW    r6, 0(r7)
-    NOP
-    NOP
-    NOP
-
-    ADDI  r7, r7, 8
-    NOP
-    NOP
-    NOP
-
-
+done:
 end:
-    J     end
-    NOP
-    NOP
-    NOP
-    NOP
+J end
+NOP
+NOP
+NOP
+NOP

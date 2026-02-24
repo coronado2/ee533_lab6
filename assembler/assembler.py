@@ -163,7 +163,7 @@ def assemble(lines):
             rs1 = regnum(parts[1])
             rs2 = regnum(parts[2])
             target = parts[3]
-            offset = (labels[target] - pc - 4) // 4
+            offset = (labels[target] - pc) // 4
             word = encode_branch(op, rs1, rs2, offset)
 
         elif op == "J":

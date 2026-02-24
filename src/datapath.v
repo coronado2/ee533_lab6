@@ -103,13 +103,15 @@ module datapath (
 		.clk(clk),
 		.rst_n(rst_n),
 		.en(pc_en),
+		.load(pc_mux_sel_wb),
+		.pc_in(br_target),
 		.pc_out(pc_if)
 	 );
 	 
 	 // Select between next pc or target branch
 	 assign br_target = pc_wb + imm_wb[`PC_WIDTH-1:0];
-	 assign pc_fetch = (pc_mux_sel_wb) ? br_target : pc_if;
-	 assign i_mem_addr_out = pc_fetch;
+	 //assign pc_fetch = (pc_mux_sel_wb) ? br_target : pc_if;
+	 assign i_mem_addr_out = pc_if;
 	 
 	 // Ensure the first instr is valid
 	 always @(posedge clk or negedge rst_n) begin
@@ -123,7 +125,7 @@ module datapath (
 		.clk(clk),
 		.rst_n(rst_n),
 		.en(valid_instr),
-		.D({pc_fetch, i_mem_data_in}),
+		.D({pc_if, i_mem_data_in}),
 		.Q({pc_id, instr_id})
 	 );
 
@@ -190,7 +192,7 @@ module datapath (
 					reg2_id = instr_id[24:21];
 					cond_id = instr_id[20:19];
 					alu_op_id = 4'b1001;	// eq opcode
-					imm_id = {{(64-9){instr_id[8]}}, instr_id[8:0]};	//PC Width
+					imm_id = {{(64-10){instr_id[9]}}, instr_id[9:0]};	//PC Width
 				end
 			endcase
 		end
