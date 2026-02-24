@@ -165,6 +165,16 @@ sub stop_cpu {
     select(undef, undef, undef, 0.1);
 }
 
+sub print_dmem_range_10_19 {
+    stop_cpu();
+
+    for (my $i = 10; $i <= 19; $i++) {
+        my $addr = $DMEM_BASE | $i;      # matches your existing style
+        my $val  = mmio_read($addr);
+
+        printf("DMEM[%2d] @ 0x%08x = 0x%016x\n", $i, $addr, $val);
+    }
+}
 # ================================================================
 # Manual Read
 # ================================================================
@@ -231,6 +241,9 @@ elsif ($cmd eq "reset") {
 }
 elsif ($cmd eq "read") {
     read_region($ARGV[1], $ARGV[2]);
+}
+elsif ($cmd eq "dumpdmem") {
+    print_dmem_range_10_19();
 }
 else {
     print "Usage: topreg [reset | load | start | read]\n";
